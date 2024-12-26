@@ -1,4 +1,7 @@
+const axios = require('axios');
 const Hospital = require("../models/hospitalModel");
+
+const GOOGLE_API_KEY = 'YOUR_GOOGLE_API_KEY_HERE';
 
 // Controller to add a new hospital
 const addHospital = async (req, res) => {
@@ -6,7 +9,7 @@ const addHospital = async (req, res) => {
     const { name, address, contact, latitude, longitude } = req.body;
 
     // Validate required fields
-    if (!name || !address || !contact || !latitude || !longitude) {
+    if (!name || !address || !contact || latitude === undefined || longitude === undefined) {
       return res.status(400).json({ message: "All fields are required." });
     }
 
@@ -31,32 +34,61 @@ const addHospital = async (req, res) => {
   }
 };
 
-// Controller to get nearby hospitals
+// Controller to get nearby hospitals using req.body
 const getNearbyHospitals = async (req, res) => {
   try {
-    const { latitude, longitude, maxDistance = 5000 } = req.query;
+    const { latitude, longitude } = req.body;
 
-    if (!latitude || !longitude) {
-      return res.status(400).json({ message: "Latitude and longitude are required." });
+    if (latitude === undefined || longitude === undefined) {
+      return res.status(400).json({
+        message: 'Latitude and Longitude are required in the request body.',
+      });
     }
 
-    // Query hospitals within the specified distance (in meters)
-    const hospitals = await Hospital.find({
-      location: {
-        $near: {
-          $geometry: {
-            type: "Point",
-            coordinates: [parseFloat(longitude), parseFloat(latitude)],
-          },
-          $maxDistance: parseInt(maxDistance),
-        },
-      },
-    });
+    if (isNaN(latitude) || isNaN(longitude)) {
+      return res.status(400).json({
+        message: 'Latitude and Longitude must be valid numbers.',
+      });
+    }
 
-    res.status(200).json({ hospitals });
+    const placesUrl = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json';
+
+    const params = {
+      location: `${latitude},${longitude}`,
+      radius: 5000,
+      type: 'hospital',
+      key: GOOGLE_API_KEY,
+    };
+
+    const response = await axios.get(placesUrl, { params });
+
+    if (response.data.status === 'OK') {
+      const hospitals = response.data.results.map((hospital) => ({
+        name: hospital.name,
+        address: hospital.vicinity,
+        rating: hospital.rating || 'N/A',
+        location: {
+          lat: hospital.geometry.location.lat,
+          lng: hospital.geometry.location.lng,
+        },
+      }));
+
+      return res.status(200).json({
+        message: 'Nearby hospitals found.',
+        hospitals: hospitals,
+      });
+    } else {
+      return res.status(500).json({
+        message: 'Failed to fetch nearby hospitals.',
+        error: response.data.error_message || 'Unknown error.',
+      });
+    }
   } catch (error) {
-    console.error("Error fetching nearby hospitals:", error);
-    res.status(500).json({ message: "Server error." });
+    console.error('Error fetching nearby hospitals:', error.message);
+    return res.status(500).json({
+      message: 'Error fetching nearby hospitals.',
+      error: error.message,
+    });
   }
 };
 
@@ -66,24 +98,21 @@ const updateHospital = async (req, res) => {
     const { id } = req.params;
     const { name, address, contact, latitude, longitude } = req.body;
 
-    // Find the hospital by ID
     const hospital = await Hospital.findById(id);
     if (!hospital) {
       return res.status(404).json({ message: "Hospital not found." });
     }
 
-    // Update the fields if provided
     if (name) hospital.name = name;
     if (address) hospital.address = address;
     if (contact) hospital.contact = contact;
-    if (latitude && longitude) {
+    if (latitude !== undefined && longitude !== undefined) {
       hospital.location = {
         type: "Point",
         coordinates: [longitude, latitude],
       };
     }
 
-    // Save updated hospital
     const updatedHospital = await hospital.save();
 
     res.status(200).json({
@@ -101,7 +130,6 @@ const deleteHospital = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Find and delete the hospital
     const deletedHospital = await Hospital.findByIdAndDelete(id);
     if (!deletedHospital) {
       return res.status(404).json({ message: "Hospital not found." });
@@ -117,6 +145,7 @@ const deleteHospital = async (req, res) => {
   }
 };
 
+// Exporting all controllers
 module.exports = {
   addHospital,
   getNearbyHospitals,

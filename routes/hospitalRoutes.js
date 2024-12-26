@@ -8,7 +8,7 @@ const {
 const router = express.Router();
 
 router.post("/", addHospital); // Add a new hospital
-router.get("/nearby", getNearbyHospitals); // Get nearby hospitals
+router.post("/nearby", getNearbyHospitals); // Get nearby hospitals
 router.put("/:id", updateHospital); // Update hospital details
 router.delete("/:id", deleteHospital); // Delete a hospital
 
