@@ -34,7 +34,7 @@ const addHospital = async (req, res) => {
   }
 };
 
-const getNearbyHospitalsOSM = async (latitude, longitude) => {
+const getNearbyHospitals = async (latitude, longitude) => {
   try {
     const response = await axios.get('https://nominatim.openstreetmap.org/search', {
       params: {
@@ -52,10 +52,6 @@ const getNearbyHospitalsOSM = async (latitude, longitude) => {
     throw new Error('Failed to fetch nearby hospitals from OSM');
   }
 };
-
-// Example usage
-const hospitals = getNearbyHospitalsOSM(40.748817, -73.985428);
-console.log(hospitals);
 
 
 // Controller to update hospital details
