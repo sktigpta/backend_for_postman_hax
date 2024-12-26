@@ -1,7 +1,7 @@
 const axios = require('axios');
 const Hospital = require("../models/hospitalModel");
 
-const GOOGLE_API_KEY = 'YOUR_GOOGLE_API_KEY_HERE';
+const GOOGLE_API_KEY = 'AIzaSyDpGBL6L6BhaV0LcOPmu3REt2W7oD7tHbA';
 
 // Controller to add a new hospital
 const addHospital = async (req, res) => {
