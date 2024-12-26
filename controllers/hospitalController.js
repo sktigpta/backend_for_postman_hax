@@ -1,8 +1,6 @@
 const axios = require('axios');
 const Hospital = require("../models/hospitalModel");
 
-const GOOGLE_API_KEY = 'AIzaSyDpGBL6L6BhaV0LcOPmu3REt2W7oD7tHbA';
-
 // Controller to add a new hospital
 const addHospital = async (req, res) => {
   try {
@@ -34,8 +32,16 @@ const addHospital = async (req, res) => {
   }
 };
 
-const getNearbyHospitals = async (latitude, longitude) => {
+// Controller to get nearby hospitals using OpenStreetMap Nominatim API
+const getNearbyHospitals = async (req, res) => {
   try {
+    // Extract latitude and longitude from query parameters
+    const { latitude, longitude } = req.query;
+
+    if (!latitude || !longitude) {
+      return res.status(400).json({ message: "Latitude and Longitude are required." });
+    }
+
     const response = await axios.get('https://nominatim.openstreetmap.org/search', {
       params: {
         format: 'json',
@@ -46,13 +52,22 @@ const getNearbyHospitals = async (latitude, longitude) => {
       },
     });
 
-    return response.data;
+    if (response.data && response.data.length > 0) {
+      return res.status(200).json({
+        message: "Nearby hospitals found.",
+        hospitals: response.data,
+      });
+    } else {
+      return res.status(404).json({ message: "No nearby hospitals found." });
+    }
   } catch (error) {
     console.error('Error fetching hospitals:', error);
-    throw new Error('Failed to fetch nearby hospitals from OSM');
+    res.status(500).json({
+      message: 'Failed to fetch nearby hospitals from OSM.',
+      error: error.message,
+    });
   }
 };
-
 
 // Controller to update hospital details
 const updateHospital = async (req, res) => {

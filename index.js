@@ -1,7 +1,7 @@
 const express = require("express");
-const mongoose = require("mongoose");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const connectDB = require("./config/db");
 
 // Load environment variables
 dotenv.config();
@@ -24,14 +24,8 @@ app.options("*", cors(corsOptions)); // Handle preflight requests
 // Middleware for JSON parsing
 app.use(express.json());
 
-// MongoDB connection
-mongoose
-  .connect(process.env.MONGO_URI) // Removed deprecated options
-  .then(() => console.log("Connected to MongoDB"))
-  .catch((err) => {
-    console.error("MongoDB connection error:", err);
-    process.exit(1); // Exit the process if connection fails
-  });
+// Connect to MongoDB
+connectDB();
 
 // Import routes
 const authRoutes = require("./routes/authRoutes");
@@ -45,5 +39,10 @@ app.use("/api/hospitals", hospitalRoutes); // Hospital locator routes
 app.use("/api/records", recordRoutes); // Health records routes
 app.use("/api/appointments", appointmentRoutes); // Appointment scheduling routes
 
-// Export the app for Vercel compatibility
+// Start the server on port 5000
+const PORT = process.env.PORT || 5000; // Use environment variable for flexibility
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
 module.exports = app;
