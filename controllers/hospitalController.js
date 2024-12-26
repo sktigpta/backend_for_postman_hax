@@ -34,63 +34,29 @@ const addHospital = async (req, res) => {
   }
 };
 
-// Controller to get nearby hospitals using req.body
-const getNearbyHospitals = async (req, res) => {
+const getNearbyHospitalsOSM = async (latitude, longitude) => {
   try {
-    const { latitude, longitude } = req.body;
-
-    if (latitude === undefined || longitude === undefined) {
-      return res.status(400).json({
-        message: 'Latitude and Longitude are required in the request body.',
-      });
-    }
-
-    if (isNaN(latitude) || isNaN(longitude)) {
-      return res.status(400).json({
-        message: 'Latitude and Longitude must be valid numbers.',
-      });
-    }
-
-    const placesUrl = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json';
-
-    const params = {
-      location: `${latitude},${longitude}`,
-      radius: 5000,
-      type: 'hospital',
-      key: GOOGLE_API_KEY,
-    };
-
-    const response = await axios.get(placesUrl, { params });
-
-    if (response.data.status === 'OK') {
-      const hospitals = response.data.results.map((hospital) => ({
-        name: hospital.name,
-        address: hospital.vicinity,
-        rating: hospital.rating || 'N/A',
-        location: {
-          lat: hospital.geometry.location.lat,
-          lng: hospital.geometry.location.lng,
-        },
-      }));
-
-      return res.status(200).json({
-        message: 'Nearby hospitals found.',
-        hospitals: hospitals,
-      });
-    } else {
-      return res.status(500).json({
-        message: 'Failed to fetch nearby hospitals.',
-        error: response.data.error_message || 'Unknown error.',
-      });
-    }
-  } catch (error) {
-    console.error('Error fetching nearby hospitals:', error.message);
-    return res.status(500).json({
-      message: 'Error fetching nearby hospitals.',
-      error: error.message,
+    const response = await axios.get('https://nominatim.openstreetmap.org/search', {
+      params: {
+        format: 'json',
+        q: 'hospital',
+        lat: latitude,
+        lon: longitude,
+        radius: 5000, // 5 km radius
+      },
     });
+
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching hospitals:', error);
+    throw new Error('Failed to fetch nearby hospitals from OSM');
   }
 };
+
+// Example usage
+const hospitals = getNearbyHospitalsOSM(40.748817, -73.985428);
+console.log(hospitals);
+
 
 // Controller to update hospital details
 const updateHospital = async (req, res) => {
