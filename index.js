@@ -39,10 +39,4 @@ app.use("/api/hospitals", hospitalRoutes); // Hospital locator routes
 app.use("/api/records", recordRoutes); // Health records routes
 app.use("/api/appointments", appointmentRoutes); // Appointment scheduling routes
 
-// Start the server on port 5000
-const PORT = process.env.PORT || 5000; // Use environment variable for flexibility
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
-
 module.exports = app;
