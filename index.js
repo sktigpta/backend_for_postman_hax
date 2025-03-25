@@ -1,42 +1,43 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const dotenv = require("dotenv");
-const connectDB = require("./config/db");
 
-// Load environment variables
-dotenv.config();
+require("./config/firebase.js");
 
-// Initialize Express app
+const youtubeRoutes = require("./routes/youtubeRoutes.js");
+const searchQueriesRoute = require("./routes/searchQueries.js");
+const gettingPermissionIds = require("./routes/permissionRoutes.js");
+const processedRoutes = require("./routes/processedRoutes.js");
+const dmcaRoutes = require("./routes/dmcaRoutes.js");
+
 const app = express();
 
-// CORS setup
-const corsOptions = {
-  origin: ["https://ambulance-frontend.vercel.app", "http://localhost:5173"], // Allowed origins
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], // Include PATCH
-  allowedHeaders: ["Content-Type", "Authorization"], // Allowed headers
-  credentials: true, // Allow cookies/authorization headers
-};
+const allowedOrigins = [
+  `http://localhost:${process.env.FRONTEND_PORT}`,
+  process.env.SECONDARY_FRONTEND_URL,
+];
 
-// Apply CORS middleware
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // Handle preflight requests
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    methods: "GET,POST,DELETE",
+    allowedHeaders: "Content-Type,Authorization",
+    credentials: true,
+  })
+);
 
-// Middleware for JSON parsing
 app.use(express.json());
 
-// Connect to MongoDB
-connectDB();
-
-// Import routes
-const authRoutes = require("./routes/authRoutes");
-const hospitalRoutes = require("./routes/hospitalRoutes");
-const recordRoutes = require("./routes/recordRoutes");
-const appointmentRoutes = require("./routes/appointmentRoutes");
-
-// API Routes
-app.use("/api/auth", authRoutes); // Authentication routes
-app.use("/api/hospitals", hospitalRoutes); // Hospital locator routes
-app.use("/api/records", recordRoutes); // Health records routes
-app.use("/api/appointments", appointmentRoutes); // Appointment scheduling routes
+app.use("/api/youtube", youtubeRoutes);
+app.use("/api/search-queries", searchQueriesRoute);
+app.use("/api/permissions", gettingPermissionIds);
+app.use("/api/processed", processedRoutes);
+app.use("/api/dmca", dmcaRoutes);
 
 module.exports = app;
