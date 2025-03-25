@@ -1,17 +1,14 @@
-const admin = require("firebase-admin");
+const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
 
-// Parse the JSON stored in the environment variable
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    databaseURL: process.env.FIREBASE_DATABASE_URL,
-  });
-
-  console.log("Firebase initialized successfully!");
+if (!serviceAccount) {
+  console.error("FIREBASE_SERVICE_ACCOUNT is not defined or is empty.");
+  process.exit(1); // Stop the application to prevent further errors
 }
 
-const db = admin.firestore();
-
-module.exports = { admin, db };
+try {
+  const parsedServiceAccount = JSON.parse(serviceAccount);
+  console.log("Service Account JSON parsed successfully!");
+} catch (error) {
+  console.error("Error parsing service account JSON:", error.message);
+  process.exit(1);
+}
